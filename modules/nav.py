@@ -19,6 +19,10 @@ def ConfigNav():
 
 
 def MenuButtons(user_roles=None):
+
+    logo_url = './img/logo.png'
+    st.sidebar.image(logo_url)
+
     if user_roles is None:
         user_roles = {}
 
