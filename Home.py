@@ -2,7 +2,7 @@ import streamlit as st
 from streamlit import session_state as ss
 
 from Chat import FILE_FOLDER, Chat
-from firebase_services import get_conversation_history, save_conversation
+from firebase_services import save_conversation
 from modules.nav import MenuButtons
 from pages.account import get_id, get_roles
 

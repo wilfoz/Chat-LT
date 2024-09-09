@@ -1,12 +1,10 @@
 from pathlib import Path
 
 import streamlit as st
-from dotenv import find_dotenv, load_dotenv
 from langchain.chains.conversational_retrieval.base import \
     ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts import PromptTemplate
-from langchain.schema import AIMessage, HumanMessage
 from langchain_community.document_loaders.pdf import PyPDFLoader
 from langchain_community.vectorstores.faiss import FAISS
 from langchain_openai.chat_models import ChatOpenAI
@@ -17,7 +15,7 @@ from configs import get_config
 from firebase_services import (clear_conversation_history,
                                get_conversation_history)
 
-_ = load_dotenv(find_dotenv())
+st.secrets['openai']['OPENAI_API_KEY']
 
 FILE_FOLDER = Path(__file__).parent / 'arquivos'
 
