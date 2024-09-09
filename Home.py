@@ -1,82 +1,95 @@
-import time
-
 import streamlit as st
 from streamlit import session_state as ss
 
+from Chat import FILE_FOLDER, Chat
+from firebase_services import get_conversation_history, save_conversation
 from modules.nav import MenuButtons
-from pages.account import get_roles
-from utils import PASTA_ARQUIVOS, cria_chain_conversa
+from pages.account import get_id, get_roles
 
 if 'authentication_status' not in ss:
     st.switch_page('pages/account.py')
-
-MenuButtons(get_roles())
-st.header('Home')
-
-def sidebar():
-    uploaded_pdfs = st.file_uploader(
-        'Adicione seus arquivos pdf', 
-        type=['.pdf'], 
-        accept_multiple_files=True
-        )
-    if not uploaded_pdfs is None:
-        for arquivo in PASTA_ARQUIVOS.glob('*.pdf'):
-            arquivo.unlink()
-        for pdf in uploaded_pdfs:
-            with open(PASTA_ARQUIVOS / pdf.name, 'wb') as f:
-                f.write(pdf.read())
     
-    label_botao = 'Inicializar ChatBot'
-    if 'chain' in st.session_state:
-        label_botao = 'Atualizar ChatBot'
-    if st.button(label_botao, use_container_width=True):
-        if len(list(PASTA_ARQUIVOS.glob('*.pdf'))) == 0:
-            st.error('Adicione arquivos .pdf para inicializar o chatbot')
-        else:
-            st.success('Inicializando o ChatBot...')
-            cria_chain_conversa()
+MenuButtons(get_roles())
+ss['authenticated_user'] = get_id(ss['username'])
+
+
+class HomePage:
+    def __init__(self):
+        user = ss['authenticated_user']
+        self.user_id = [*user.values()][0]
+        self.agent = Chat(self.user_id)
+
+    def display_sidebar(self):
+        uploaded_pdfs = st.file_uploader(
+            'Adicione seus arquivos PDF', 
+            type=['pdf'], 
+            accept_multiple_files=True
+        )
+        if uploaded_pdfs:
+            self._clear_old_files()
+            self._save_uploaded_pdfs(uploaded_pdfs)
+        
+        label_botao = 'Inicializar ChatBot' if 'chain' not in st.session_state else 'Atualizar ChatBot'
+        if st.button(label_botao, use_container_width=True):
+            if not list(FILE_FOLDER.glob('*.pdf')):
+                st.error('Adicione arquivos PDF para inicializar o chatbot.')
+            else:
+                self.agent.initialize_chain()
+                st.session_state['agent'] = self.agent
+                st.success('ChatBot inicializado!')
+
+    def _clear_old_files(self):
+        for arquivo in FILE_FOLDER.glob('*.pdf'):
+            arquivo.unlink()
+
+    def _save_uploaded_pdfs(self, uploaded_pdfs):
+        for pdf in uploaded_pdfs:
+            with open(FILE_FOLDER / pdf.name, 'wb') as f:
+                f.write(pdf.read())
+
+    def display_chat_window(self):
+        st.header(f'🤖 Bem-vindo ao Chat LT', divider=True)
+
+        if 'agent' not in st.session_state:
+            st.error('Faça o upload de PDFs para começar!')
+            st.stop()
+
+        agent = st.session_state['agent']
+
+        container = st.container()
+        agent.add_to_memory(self.user_id)
+        for chat in agent.memory.chat_memory.messages:
+            if chat.type == 'human':
+                container.chat_message('human').markdown(f"Você: {chat.content}")
+            else:
+                container.chat_message('ai').markdown(f"Bot: {chat.content}")
+        
+        # Input de nova mensagem
+        nova_mensagem = st.chat_input('Converse com seus documentos...')
+        if nova_mensagem:
+            container.chat_message('human').markdown(nova_mensagem)
+            resposta = agent.chat_chain.invoke({'question': nova_mensagem})
+            st.session_state['ultima_resposta'] = resposta
+            container.chat_message('ai').markdown(resposta['answer'])
+
+            # Salva a conversa no Firebase
+            save_conversation(self.user_id, nova_mensagem, resposta['answer'])
+
+        # Botão para limpar o histórico
+        if st.button('Limpar Histórico'):
+            agent.clear_history()
+            st.success('Histórico limpo!')
             st.rerun()
 
-
-def chat_window():
-    st.header('🤖 Bem-vindo ao Chat da Obra 138', divider=True)
-
-    if not 'chain' in st.session_state:
-        st.error('Faça o upload de PDFs para começar!')
-        st.stop()
-    
-    chain = st.session_state['chain']
-    memory = chain.memory
-
-    mensagens = memory.load_memory_variables({})['chat_history']
-
-    container = st.container()
-    for mensagem in mensagens:
-        chat = container.chat_message(mensagem.type)
-        chat.markdown(mensagem.content)
-
-    nova_mensagem = st.chat_input('Converse com seus documentos...')
-    if nova_mensagem:
-        chat = container.chat_message('human')
-        chat.markdown(nova_mensagem)
-        chat = container.chat_message('ai')
-        chat.markdown('Gerando resposta')
-
-        resposta = chain.invoke({'question': nova_mensagem})
-        st.session_state['ultima_resposta'] = resposta
-        st.rerun()
-
-
-def main():
-    with st.sidebar:
-        sidebar()
-    chat_window()
+    def run(self) -> None:
+        with st.sidebar:
+            self.display_sidebar()
+        self.display_chat_window()
 
 
 if __name__ == '__main__':
     if ss.authentication_status:
-        main()
+        page = HomePage()
+        page.run()
     else:
-        st.write('Please log in on login page.')
-    
-        
+        st.write('Por favor, faça login na página de login.')
