@@ -1,11 +1,12 @@
+import json
 from datetime import datetime
 
 import firebase_admin
 import streamlit as st
 from firebase_admin import credentials, firestore
 
-API_KEY = st.secrets["firebase"]["textkey"]
-cred = credentials.Certificate("chat-lt-firebase.json")
+key_dict = json.loads(st.secrets["firebase"]["textkey"])
+cred = credentials.Certificate(key_dict)
 if not firebase_admin._apps:
     firebase_admin.initialize_app(cred)
 db = firestore.client()
