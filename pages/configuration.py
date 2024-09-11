@@ -3,10 +3,10 @@ import json
 import streamlit as st
 from streamlit import session_state as ss
 
+from Chat import FILE_FOLDER, Chat
 from configs import get_config
 from modules.nav import MenuButtons
 from pages.account import get_roles
-from utils import PASTA_ARQUIVOS, cria_chain_conversa
 
 if 'authentication_status' not in ss:
     st.switch_page('pages/account.py')
@@ -32,11 +32,11 @@ def config_page():
         st.rerun()
     
     if st.button('Atualizar ChatBot', use_container_width=True):
-        if len(list(PASTA_ARQUIVOS.glob('*.pdf'))) == 0:
+        if len(list(FILE_FOLDER.glob('*.pdf'))) == 0:
             st.error('Adicione arquivos .pdf para inicializar o chatbot')
         else:
             st.success('Inicializando o ChatBot...')
-            cria_chain_conversa()
+            # cria_chain_conversa()
             st.rerun()
 
 

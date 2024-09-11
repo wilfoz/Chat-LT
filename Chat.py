@@ -12,8 +12,6 @@ from langchain_openai.embeddings import OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from configs import get_config
-from firebase_services import (clear_conversation_history,
-                               get_conversation_history)
 
 st.secrets['openai']['OPENAI_API_KEY']
 
@@ -21,10 +19,11 @@ FILE_FOLDER = Path(__file__).parent / 'arquivos'
 
 
 class Chat:
-    def __init__(self, user_id):
+    def __init__(self, user_id, database):
         self.user_id = user_id
         self.chat_chain = None
         self.memory = None
+        self.database = database
 
     def import_documents(self):
         documentos = []
@@ -83,7 +82,7 @@ class Chat:
         st.session_state['chain'] = self.chat_chain
 
     def add_to_memory(self, user_id: str):
-        conversation_history = get_conversation_history(user_id)
+        conversation_history = self.database.get_conversation_history(user_id)
         resp = conversation_history if conversation_history else []
         messages_and_responses = [(item['message'], item['response']) for item in resp]
 
@@ -92,5 +91,5 @@ class Chat:
             self.memory.chat_memory.add_ai_message(response)
 
     def clear_history(self):
-        clear_conversation_history(self.user_id)
+        self.database.clear_conversation_history(self.user_id)
         self.memory.clear()

@@ -2,22 +2,26 @@ import streamlit as st
 from streamlit import session_state as ss
 
 from Chat import FILE_FOLDER, Chat
-from firebase_services import save_conversation
+from firebase_server import init_server
+from firebase_services import FirebaseFirebase
+from firebase_storage import FirebaseStorage
 from modules.nav import MenuButtons
 from pages.account import get_id, get_roles
 
 if 'authentication_status' not in ss:
     st.switch_page('pages/account.py')
-    
+
 MenuButtons(get_roles())
 ss['authenticated_user'] = get_id(ss['username'])
 
 
 class HomePage:
-    def __init__(self):
+    def __init__(self, storage_service, database):
         user = ss['authenticated_user']
         self.user_id = [*user.values()][0]
-        self.agent = Chat(self.user_id)
+        self.database = database
+        self.agent = Chat(self.user_id, self.database)
+        self.storage_service = storage_service
 
     def display_sidebar(self):
         uploaded_pdfs = st.file_uploader(
@@ -28,6 +32,8 @@ class HomePage:
         if uploaded_pdfs:
             self._clear_old_files()
             self._save_uploaded_pdfs(uploaded_pdfs)
+            for pdf in uploaded_pdfs:
+                self.storage_service.save_pdf(pdf, pdf.name)
         
         label_botao = 'Inicializar ChatBot' if 'chain' not in st.session_state else 'Atualizar ChatBot'
         if st.button(label_botao, use_container_width=True):
@@ -73,7 +79,7 @@ class HomePage:
             container.chat_message('ai').markdown(resposta['answer'])
 
             # Salva a conversa no Firebase
-            save_conversation(self.user_id, nova_mensagem, resposta['answer'])
+            self.database.save_conversation(self.user_id, nova_mensagem, resposta['answer'])
 
         # Botão para limpar o histórico
         if st.button('Limpar Histórico'):
@@ -87,9 +93,13 @@ class HomePage:
         self.display_chat_window()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     if ss.authentication_status:
-        page = HomePage()
-        page.run()
+        init_server()
+        database = FirebaseFirebase()
+        storage = FirebaseStorage()
+
+        home = HomePage(storage, database)
+        home.run()
     else:
         st.write('Por favor, faça login na página de login.')

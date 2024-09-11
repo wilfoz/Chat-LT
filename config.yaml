@@ -8,7 +8,7 @@ credentials:
       email: controller@gmail.com
       failed_login_attempts: 0
       id: 34e231f9-5e6e-46f3-8492-4e850312ff68
-      logged_in: false
+      logged_in: true
       name: controller
       password: $2b$12$pjf6rzNmiRDNh9YD4NuOp.Ig5KFapCX.eoWtd8qOPOSFLMt.H1Q2.
       role: user
@@ -16,7 +16,7 @@ credentials:
       email: wilerfoz@gmail.com
       failed_login_attempts: 0
       id: 4f172429-98d0-4e4e-b525-255810c80f62
-      logged_in: true
+      logged_in: false
       name: wilerson
       password: $2b$12$H.BWcaPP3izGt/My1S6cde9pp2e2efk4ittqWg4rl.wZ2QChog7uC
       role: admin

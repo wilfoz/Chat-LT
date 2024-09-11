@@ -24,7 +24,6 @@ def get_id(name: str):
     return {username: user_info['id'] for username, user_info in cred['usernames'].items() if username == name}
 
 
-
 def get_roles():
     """Gets user roles based on config file."""
     with open(CONFIG_FILENAME) as file:
@@ -36,6 +35,7 @@ def get_roles():
         cred = {}
     return {username: user_info['role'] for username, user_info in cred['usernames'].items() if 'role' in user_info}
 
+
 authenticator = stauth.Authenticate(
     config['credentials'],
     config['cookie']['name'],
@@ -43,8 +43,6 @@ authenticator = stauth.Authenticate(
     config['cookie']['expiry_days'],
     config['preauthorized']
 )
-
-# login_tab, register_tab = st.tabs(['Login', 'Register'])
 
 st.header("Login", divider=True)
 authenticator.login(location='main')
@@ -58,30 +56,7 @@ elif ss["authentication_status"] is False:
 elif ss["authentication_status"] is None:
     st.warning('Please enter your username and password')
 
-# with login_tab:
-#     authenticator.login(location='main')
-
-#     if ss["authentication_status"]:
-#         authenticator.logout(location='main')    
-#         st.write(f'Welcome *{ss["name"]}*')
-
-#     elif ss["authentication_status"] is False:
-#         st.error('Username/password is incorrect')
-#     elif ss["authentication_status"] is None:
-#         st.warning('Please enter your username and password')
-
-# with register_tab:
-#     if not ss["authentication_status"]:
-#         try:
-#             email_of_registered_user, username_of_registered_user, name_of_registered_user = authenticator.register_user(pre_authorization=False)
-#             if email_of_registered_user:
-#                 st.success('User registered successfully')
-#         except Exception as e:
-#             st.error(e)
-
-# We call below code in case of registration, reset password, etc.
 with open(CONFIG_FILENAME, 'w') as file:
     yaml.dump(config, file, default_flow_style=False)
 
-# Call this late because we show the page navigator depending on who logged in.
 MenuButtons(get_roles())

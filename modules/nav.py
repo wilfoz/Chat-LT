@@ -18,7 +18,7 @@ st.markdown(
 
 
 def HomeNav():
-    st.sidebar.page_link("Home.py", label="Home", icon='🏠')
+    st.sidebar.page_link("Home_page.py", label="Home", icon='🏠')
 
 
 def LoginNav():
